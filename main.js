@@ -52,6 +52,9 @@ Deno.serve (async (req) => {
       return new Response("Not Found", { status: 404 });
     }
 
+    const serverTiming = [];
+    const tStart = performance.now ();
+
     const fontUrl = decodeURIComponent(encodedFontUrl);
     const value = decodeURIComponent(encodedValue);
 
@@ -66,7 +69,12 @@ Deno.serve (async (req) => {
     }
 
     const fontBuf = await fontRes.arrayBuffer ();
+    const tFetchEnd = performance.now ();
+    serverTiming.push (`fetch;dur=${(tFetchEnd - tStart).toFixed(2)}`);
+
     const otf = opentype.parse (fontBuf);
+    const tParseEnd = performance.now ();
+    serverTiming.push (`parse;dur=${(tParseEnd - tFetchEnd).toFixed(2)}`);
     
     let glyph;
     try {
@@ -110,10 +118,14 @@ Deno.serve (async (req) => {
         .replace (/&/g, '&amp;').replace (/</g, '&lt;');
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${upem} ${upem}"><path d="${pathData}"/><desc>${license}</desc></svg>`;
+    const tEnd = performance.now ();
+    serverTiming.push (`total;dur=${(tEnd - tStart).toFixed(2)}`);
+
     return new Response(svg, {
       headers: {
         "content-type": "image/svg+xml; charset=utf-8",
         "cache-control": "public, max-age=" + 10*24*60*60,
+        "Server-Timing": serverTiming.join (", "),
         "X-Rev": REV,
         ...(allowOrigin ? {"Access-Control-Allow-Origin": allowOrigin}:{}),
         "Vary": "Origin",

@@ -9,7 +9,7 @@ build-deno: dist/main.js dist/opentype.module.js
 dist/main.js: main.js
 	mkdir -p dist
 	cp $< $@
-	sed -i "s/@@REV@@/rev1/g" $@
+	sed -i "s/@@REV@@/rev2/g" $@
 dist/opentype.module.js: opentype.module.js
 	mkdir -p dist
 	cp $< $@
