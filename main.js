@@ -7,8 +7,21 @@ const ALLOWED_ORIGINS = new Set([
 
 Deno.serve (async (req) => {
   try {
-    const url = new URL(req.url);
-    const parts = url.pathname.split("/").filter(Boolean);
+    const url = new URL (req.url);
+    const parts = url.pathname.split ("/");
+    parts.shift ();
+
+    if (parts.length === 0) {
+      return new Response ('<!DOCTYPE HTML><title>SuikaWiki</title><a href=https://suikawiki.org>SuikaWiki</a>', {status: 200, headers: {
+        'content-type': 'text/html',
+      }});
+    } else if (parts.length === 1 && parts[0] === 'robots.txt') {
+      return new Response ("", {status: 200});
+    } else if (parts.length === 1 && parts[0] === 'favicon.ico') {
+      return new Response ("", {status: 302, headers: {
+        location: 'https://data.suikawiki.org/favicon.ico',
+      }});
+    }
 
     // /ot/{url}/...
     if (parts[0] !== "ot" || parts.length < 5) {
