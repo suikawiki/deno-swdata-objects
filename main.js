@@ -1,8 +1,13 @@
 import opentype from "./opentype.module.js";
 
-const ALLOWED_ORIGINS = new Set([
+const UPSTREAM_ORIGINS = new Set([
   "https://fonts.suikawiki.org",
 ]);
+
+const REV = "@@REV@@";
+const CORS_ORIGINS = [
+  "https://suikawiki.org",
+];
 
 
 Deno.serve (async (req) => {
@@ -11,12 +16,22 @@ Deno.serve (async (req) => {
     const parts = url.pathname.split ("/");
     parts.shift ();
 
+    const origin = req.headers.get ("Origin") || "";
+    const origin2 = origin.replace (/^(https?:\/\/)[a-z0-9-]+\./, (_, p) => p);
+    const allowOrigin = (CORS_ORIGINS.includes (origin) ||
+                         CORS_ORIGINS.includes (origin2)) ? origin : null;
+
     if (parts.length === 0) {
       return new Response ('<!DOCTYPE HTML><title>SuikaWiki</title><a href=https://suikawiki.org>SuikaWiki</a>', {status: 200, headers: {
         'content-type': 'text/html',
       }});
     } else if (parts.length === 1 && parts[0] === 'robots.txt') {
-      return new Response ("", {status: 200});
+      return new Response ("", {status: 200, headers: {
+        "X-Rev": REV,
+        ...(allowOrigin ? {"Access-Control-Allow-Origin": allowOrigin}:{}),
+        "Vary": "Origin",
+        "Access-Control-Expose-Headers": "X-Rev",
+      }});
     } else if (parts.length === 1 && parts[0] === 'favicon.ico') {
       return new Response ("", {status: 302, headers: {
         location: 'https://data.suikawiki.org/favicon.ico',
@@ -41,7 +56,7 @@ Deno.serve (async (req) => {
     const value = decodeURIComponent(encodedValue);
 
     const fontURLObj = new URL(fontUrl);
-    if (!ALLOWED_ORIGINS.has(fontURLObj.origin)) {
+    if (!UPSTREAM_ORIGINS.has(fontURLObj.origin)) {
       return new Response("Not Found", { status: 404 });
     }
 
@@ -69,7 +84,12 @@ Deno.serve (async (req) => {
     } catch (e) {
       console.error (e);
     }
-    if (!glyph) return new Response ("404 Glyph not found", { status: 404 });
+    if (!glyph) return new Response ("404 Glyph not found", {status: 404, headers: {
+      "X-Rev": REV,
+      ...(allowOrigin ? {"Access-Control-Allow-Origin": allowOrigin}:{}),
+      "Vary": "Origin",
+      "Access-Control-Expose-Headers": "X-Rev",
+    }});
 
     const upem = otf.unitsPerEm;
     let h = otf.tables.os2.sTypoAscender - otf.tables.os2.sTypoDescender;
@@ -94,6 +114,10 @@ Deno.serve (async (req) => {
       headers: {
         "content-type": "image/svg+xml; charset=utf-8",
         "cache-control": "public, max-age=" + 10*24*60*60,
+        "X-Rev": REV,
+        ...(allowOrigin ? {"Access-Control-Allow-Origin": allowOrigin}:{}),
+        "Vary": "Origin",
+        "Access-Control-Expose-Headers": "X-Rev",
       },
     });
   } catch (err) {
