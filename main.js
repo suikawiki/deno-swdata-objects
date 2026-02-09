@@ -21,7 +21,7 @@ Deno.serve (async (req) => {
     const allowOrigin = (CORS_ORIGINS.includes (origin) ||
                          CORS_ORIGINS.includes (origin2)) ? origin : null;
 
-    if (parts.length === 0) {
+    if (parts.length === 1 && parts[0] === '') {
       return new Response ('<!DOCTYPE HTML><title>SuikaWiki</title><a href=https://suikawiki.org>SuikaWiki</a>', {status: 200, headers: {
         'content-type': 'text/html',
       }});
