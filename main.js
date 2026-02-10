@@ -86,6 +86,7 @@ Deno.serve (async (req) => {
       } else if (type === "char") {
         const codePoint = parseInt (value, 16);
         glyph = otf.charToGlyph (String.fromCodePoint (codePoint));
+        if (glyph.index === 0) glyph = null;
       } else {
         return new Response("Not Found", { status: 404 });
       }
@@ -108,7 +109,7 @@ Deno.serve (async (req) => {
 
     let license = [
       '<' + fontUrl + '>',
-      glyph.glyphID,
+      glyph.index,
       
       otf.names.copyright?.en,
       otf.names.license?.en,
